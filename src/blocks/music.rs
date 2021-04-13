@@ -343,13 +343,16 @@ impl ConfigBlock for Music {
 
                 loop {
                     for ref signal in dbus_conn.incoming(60_000) {
-                        let mut players = players_clone
+                        eprintln!("-------------------------------------");
+                        let mut players = dbg!(players_clone
                             .lock()
-                            .expect("failed to acquire lock for `players`");
+                            .expect("failed to acquire lock for `players`"));
+
                         let mut updated = false;
 
                         // Some property changed
                         if let Some(prop_changed) = PropertiesPropertiesChanged::from_message(signal) {
+                            eprintln!("new event: ppc");
                             if let Some(sender) = signal.sender() {
                                 let sender = sender.to_string();
                                 if let Some(player) = players.iter_mut().find(|p| p.bus_name == sender) {
@@ -389,6 +392,7 @@ impl ConfigBlock for Music {
                         }
                         // Add/remove player
                         else if signal.member().as_deref() == Some("NameOwnerChanged") {
+                            eprintln!("new event: add/remove");
                             if let Ok((name, old_owner, new_owner)) = signal.read3::<&str, &str, &str>() {
                                 match (old_owner, new_owner) {
                                     ("", new_owner) => { // Add a new player
@@ -409,8 +413,9 @@ impl ConfigBlock for Music {
                             }
                         }
 
+
                         // Request to update the block
-                        if updated {
+                        if dbg!(updated) {
                             send_clone.send(Task {
                                 id,
                                 update_time: Instant::now(),
