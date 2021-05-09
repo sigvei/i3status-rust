@@ -343,22 +343,25 @@ impl ConfigBlock for Music {
 
                 loop {
                     for ref signal in dbus_conn.incoming(60_000) {
-                        eprintln!("-------------------------------------");
-                        let mut players = dbg!(players_clone
+                        let mut players = players_clone
                             .lock()
-                            .expect("failed to acquire lock for `players`"));
+                            .expect("failed to acquire lock for `players`");
+                        eprintln!("-------------------------------------");
+                        eprintln!("Player info before updating:\n {:#?}", players);
 
                         let mut updated = false;
 
                         // Some property changed
                         if let Some(prop_changed) = PropertiesPropertiesChanged::from_message(signal) {
                             eprintln!("new event: ppc");
+                            eprintln!("{:#?}", signal);
                             if let Some(sender) = signal.sender() {
                                 let sender = sender.to_string();
                                 if let Some(player) = players.iter_mut().find(|p| p.bus_name == sender) {
                                     if let Some(data) = prop_changed.changed_properties.get("Metadata") {
                                         let (title, artist) = extract_from_metadata(&data.0).unwrap_or((None,None));
                                         if player.title != title || player.artist != artist {
+                                            eprintln!("Updating metadata from '{:#?}|{:#?}' to '{:#?}|{:#?}'", player.artist, player.title, artist, title);
                                             player.title = title;
                                             player.artist = artist;
                                             updated = true;
@@ -367,7 +370,8 @@ impl ConfigBlock for Music {
                                     if let Some(data) = prop_changed.changed_properties.get("PlaybackStatus") {
                                         let new_playback = extract_playback_status(&data.0);
                                         if player.playback_status != new_playback {
-                                            player.playback_status = extract_playback_status(&data.0);
+                                            eprintln!("Updating player status from {:#?} to {:#?}", player.playback_status, new_playback);
+                                            player.playback_status = new_playback;
                                             updated = true;
                                         }
                                     }
@@ -384,6 +388,7 @@ impl ConfigBlock for Music {
                                         if data.0.as_iter().unwrap().peekable().peek().is_none() {
                                             player.artist = None;
                                             player.title = None;
+                                            eprintln!("xxx playerctl event xxx");
                                             updated = true;
                                         }
                                     }
