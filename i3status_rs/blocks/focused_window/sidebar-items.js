@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Driver",""]],"fn":[["run",""]],"struct":[["FocusedWindowConfig",""],["Info",""],["Ristate",""],["SwayIpc",""]],"trait":[["Backend",""]]});
